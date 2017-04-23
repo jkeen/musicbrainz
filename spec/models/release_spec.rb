@@ -7,7 +7,7 @@ describe MusicBrainz::Release do
     it 'delegates it to the client properly' do
       mbid = 'bcf7c1d6-8cb5-41ca-a798-cb6e994f1bda'
       
-      allow_any_instance_of(MusicBrainz::Client).to receive(:find).with('MusicBrainz::Release', mbid, [:media, :release_groups, :url_rels])
+      allow_any_instance_of(MusicBrainz::Client).to receive(:find).with('MusicBrainz::Release', {id: mbid, inc: [:media, :release_groups, :url_rels]})
       
       MusicBrainz::Release.find(mbid)
     end  

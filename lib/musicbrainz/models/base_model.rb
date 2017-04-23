@@ -2,11 +2,13 @@ module MusicBrainz
   class BaseModel
     attr_accessor :do_not_search
     
-    def self.find(id, standard_includes = nil)
-      standard_includes = standard_includes || [:url_rels]
+    def self.find(id, params = {})
+      standard_includes = params.has_key?(:inc) ? (params[:inc] || []) : [:url_rels]
       working_includes = (standard_includes + (includes || [])).uniq; eval("#{to_s}.includes = []")
+      params[:inc] = working_includes
+      params[:id] = id
       
-      client.find(to_s, id, working_includes)
+      client.find(to_s, params)
     end
 
     def self.client

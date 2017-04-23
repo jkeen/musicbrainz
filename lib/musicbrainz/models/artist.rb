@@ -10,13 +10,13 @@ module MusicBrainz
     def release_groups(options = {})
       return @release_groups if @release_groups || @id.nil? || do_not_search
       
-      extra_query = options[:extra_query] ? options[:extra_query] : ''
-      params = { query: "arid:#{id} #{extra_query}", inc: [:url_rels, :artist_credits], limit: 100 }
-      params[:offset] = options[:offset] if options.has_key? :offset
+      params = {
+        artist: id,
+        inc: (options.has_key?(:inc) ? options[:inc] : [:url_rels, :artist_credits]),
+        limit: (options.has_key?(:limit) ? options[:limit] : 100),
+        offset: (options.has_key?(:offset) ? options[:offset] : 0) }
       
-      client.search(
-        'MusicBrainz::ReleaseGroup', params, sort: :first_release_date
-      )
+      client.find('MusicBrainz::ReleaseGroup', params)
     end
     
     class << self

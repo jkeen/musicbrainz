@@ -8,7 +8,7 @@ describe MusicBrainz::BaseModel do
       it 'delegates it to the client properly with standard includes' do
         mbid = 'bcf7c1d6-8cb5-41ca-a798-cb6e994f1bda'
         
-        expect_any_instance_of(MusicBrainz::Client).to receive(:find).with(subject_type, mbid, [:url_rels])
+        expect_any_instance_of(MusicBrainz::Client).to receive(:find).with(subject_type, {id: mbid, inc: [:url_rels]})
         
         MusicBrainz.const_get(subject_type.split('::').pop.to_sym).find(mbid)
       end 
@@ -22,7 +22,7 @@ describe MusicBrainz::BaseModel do
       it 'delegates it to the client properly with standard includes plus manual includes' do
         mbid = 'bcf7c1d6-8cb5-41ca-a798-cb6e994f1bda'
         
-        expect_any_instance_of(MusicBrainz::Client).to receive(:find).with('MusicBrainz::Artist', mbid, [:url_rels, :tags])
+        expect_any_instance_of(MusicBrainz::Client).to receive(:find).with('MusicBrainz::Artist', {id: mbid, inc: [:url_rels, :tags]})
         
         MusicBrainz::Artist.with(:tags).find(mbid)
       end 

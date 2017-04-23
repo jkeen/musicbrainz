@@ -14,8 +14,9 @@ module MusicBrainz
     end
 
     class << self
-      def find(id, standard_includes = nil)
-        super(id, standard_includes || [:media, :release_groups, :url_rels])
+      def find(id, params = {})
+        params[:inc] ||= [:media, :release_groups, :url_rels]
+        super(id, params)
       end
       
       def find_by_release_group_id(release_group_id, query = {})

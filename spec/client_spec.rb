@@ -11,7 +11,7 @@ describe MusicBrainz::Client do
         "http://musicbrainz.org/ws/2/recording/#{mbid}?inc=url-rels"
       ).and_return(status: 200, body: "<metadata><recording id='#{mbid}'/></metadata>")
       
-      recording = MusicBrainz::Client.new.find('MusicBrainz::Recording', mbid, [:url_rels])
+      recording = MusicBrainz::Client.new.find('MusicBrainz::Recording', {id: mbid, inc: [:url_rels]})
       
       expect(recording.is_a?(MusicBrainz::Recording)).to be_truthy
       expect(recording.id).to be == mbid

@@ -12,23 +12,27 @@ module MusicBrainz
       end
     end
 
-    def find(resource, id, includes = [])
+    def find(resource, params)
       raise Exception.new("You need to run MusicBrainz.configure before querying") if MusicBrainz.config.nil?
 
-      params = { id: id }
-      params[:inc] = includes unless includes.empty?
-      
+      request_type = params.has_key?(:id) ? :lookup : :browse
       response = get_contents(build_url(resource, params))
       
       if response[:status] == 200
-        MusicBrainz.const_get(resource.split('::').pop.to_sym).from_xml(
-          Nokogiri::XML.parse(response[:body]).remove_namespaces!.xpath('/metadata/*[1]').to_xml
-        )
+        if request_type == :lookup
+          MusicBrainz.const_get(resource.split('::').pop.to_sym).from_xml(
+            Nokogiri::XML.parse(response[:body]).remove_namespaces!.xpath('/metadata/*[1]').to_xml
+          )
+        else
+          MusicBrainz::Mapper::List.from_xml(
+            Nokogiri::XML.parse(response[:body]).remove_namespaces!.xpath('/metadata/*').to_xml.gsub('ext:score', 'score')
+          )
+        end
       else
         nil
       end
     end
-    
+
     def search(resource, params, options = {})
       raise Exception.new("You need to run MusicBrainz.configure before querying") if MusicBrainz.config.nil?
       
