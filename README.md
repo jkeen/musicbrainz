@@ -69,16 +69,29 @@ MusicBrainz::Artist.discography(id)
 {
   :id             => String,
   :type           => String,
+
   :name           => String,
   :sort_name      => String,
   :gender         => String,
-  :disambiguation => String,
   :country        => String,
-  :date_begin     => Date,
-  :date_end       => Date,
-  :urls           => Hash # will be removed in 1.0. Use :relations => { :url => {...} } instead,
-  :relations      => Hash,
-  :tags           => Array
+  :disambiguation => String,
+  :ipi            => String,
+  :begin          => String,
+  :end            => String,
+  :user_rating    => Integer,
+
+  :annotation     => MusicBrainz::Annotation,
+  :ipis           => Array,
+  :aliases        => MusicBrainz::Mapper::List,
+  :recordings     => MusicBrainz::Mapper::List,
+  :releases       => MusicBrainz::Mapper::List,
+  :release_groups => MusicBrainz::Mapper::List,
+  :labels         => MusicBrainz::Mapper::List,
+  :works          => MusicBrainz::Mapper::List,
+  :relations      => MusicBrainz::Mapper::List,
+  :tags           => MusicBrainz::Mapper::List,
+  :user_tags      => MusicBrainz::Mapper::List,
+  :rating         => MusicBrainz::Rating
 }
 ```
 
@@ -86,6 +99,7 @@ MusicBrainz::ReleaseGroup
 ```ruby
 # Class Methods
 MusicBrainz::ReleaseGroup.find(id)
+MusicBrainz::ReleaseGroup.find_by_artist_id(artist_id)
 MusicBrainz::ReleaseGroup.find_by_artist_and_title(artist_name, title, type: 'Album')
 MusicBrainz::ReleaseGroup.search(artist_name, title)
 MusicBrainz::ReleaseGroup.search(artist_name, title, type: 'Album')
@@ -97,12 +111,21 @@ MusicBrainz::ReleaseGroup.search(artist_name, title, type: 'Album')
 {
   :id                 => String,
   :type               => String,
+
   :title              => String,
-  :desc               => String,
+  :disambiguation     => String,
   :first_release_date => Date,
-  :urls               => Hash # will be removed in 1.0. Use :relations => { :url => {...} } instead,
-  :relations          => Hash,
-  :tags               => Array
+  :primary_type       => String,
+  :secondary_types    => Array,
+  :user_rating        => Integer,
+
+  :annotation         => MusicBrainz::Annotation,
+  :artists            => [::MusicBrainz::NameCredit],
+  :releases           => MusicBrainz::Mapper::List,
+  :relations          => MusicBrainz::Mapper::List,
+  :tags               => MusicBrainz::Mapper::List,
+  :user_tags          => MusicBrainz::Mapper::List,
+  :rating             => MusicBrainz::Rating
 }
 ```
 
@@ -110,25 +133,37 @@ MusicBrainz::Release
 ```ruby
 # Class Methods
 MusicBrainz::Release.find(id)
+MusicBrainz::Release.find_by_release_group_id(release_group_id, query = {})
 
 # Instance Methods
 @release.tracks
 
 # Fields
 {
-  :id         => String,
-  :type       => String,
-  :title      => String,
-  :status     => String,
-  :format     => String,
-  :date       => Date,
-  :country    => String,
-  :asin       => String,
-  :barcode    => String,
-  :quality    => String,
-  :urls       => Hash # will be removed in 1.0. Use :relations => { :url => {...} } instead,
-  :relations  => Hash,
-  :media      => Hash
+  :id             => String,
+
+  :title          => String,
+  :status         => String,
+  :quality        => String,
+  :disambiguation => String,
+  :packaging      => String,
+  :language       => String,
+  :script         => String,
+  :date           => Date,
+  :country        => String,
+  :barcode        => String,
+  :asin           => String,
+
+  :annotation     => MusicBrainz::Annotation,
+  :artists        => [MusicBrainz::NameCredit],
+  :release_group  => MusicBrainz::ReleaseGroup,
+  :cover_art_archive => MusicBrainz::CoverArtArchive,
+  :label_infos    => MusicBrainz::Mapper::List,
+  :media          => MusicBrainz::Mapper::List,
+  :relations      => MusicBrainz::Mapper::List,
+  :tags           => MusicBrainz::Mapper::List,
+  :user_tags      => MusicBrainz::Mapper::List,
+  :collections    => MusicBrainz::Mapper::List
 }
 ```
 
@@ -144,33 +179,24 @@ MusicBrainz::Recording.search(artist_name, title, type: 'Album')
 # Fields
 {
   :id           => String,
-  :artists      => Array, // use MusicBrainz::Recording#artist_name to concat artist name(s) with joinphrase
   :title        => String,
   :length       => Integer,
-  :urls         => Hash # will be removed in 1.0. Use :relations => { :url => {...} } instead,
-  :relations    => Hash,
-  :tags         => Array
+  :disambiguation => String,
+  :user_rating  => Integer,
+
+  :annotation   => MusicBrainz::Annotation,
+  :artists      => [MusicBrainz::NameCredit],
+  :releases     => MusicBrainz::Mapper::List,
+  :puids        => MusicBrainz::Mapper::List,
+  :isrcs        => MusicBrainz::Mapper::List,
+  :relations    => MusicBrainz::Mapper::List,
+  :tags         => MusicBrainz::Mapper::List,
+  :user_tags    => MusicBrainz::Mapper::List,
+  :rating       => MusicBrainz::Rating
 }
 ```
 
 MusicBrainz::Track (DEPRECATED: use MusicBrainz::Recording instead)
-
-```ruby
-# Class Methods
-MusicBrainz::Track.find(id)
-
-# Fields
-{
-  :position     => Integer,
-  :recording_id => String,
-  :recording    => MusicBrainz::Recording
-  :artists      => Array
-  :title        => String,
-  :length       => Integer,
-  :urls         => Hash # will be removed in 1.0. Use :relations => { :url => {...} } instead,
-  :relations    => Hash
-}
-```
 
 ### MusicBrainz's XML Web Service 2.0 Reference
 
