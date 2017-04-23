@@ -56,6 +56,7 @@ module MusicBrainz
 
     def build_url(resource, params)
       resource = 'MusicBrainz::Recording' if resource == 'MusicBrainz::Track'
+      resource = 'MusicBrainz::Discid' if resource == 'MusicBrainz::Disc'
       resource = underscore(resource.split('::').last)
       
       "#{MusicBrainz.config.web_service_url}#{resource.to_s.gsub('_', '-')}" <<

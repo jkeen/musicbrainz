@@ -8,6 +8,7 @@
 *   Adds :offset option for ReleaseGroup search.
 *   Improves artist search and search everywhere and not only in artist name field.
 *   extra_query option for MusicBrainz::Artist#release_groups.
+*   Find Disc by Disc ID.
 
 # 0.7.7 (December 1, 2014) ##
 
