@@ -1,89 +1,89 @@
-# -*- encoding : utf-8 -*-
+# -*- encoding: utf-8 -*-
 
 require "spec_helper"
 
 describe MusicBrainz::ReleaseGroup do
-  describe '.find' do
-    it "gets no exception while loading release group info" do
-      expect {
-        MusicBrainz::ReleaseGroup.find("6f33e0f0-cde2-38f9-9aee-2c60af8d1a61")
-      }.to_not raise_error(Exception)
-    end
-
-    it "gets correct instance" do
-      release_group = MusicBrainz::ReleaseGroup.find("6f33e0f0-cde2-38f9-9aee-2c60af8d1a61")
-      expect(release_group).to be_an_instance_of(MusicBrainz::ReleaseGroup)
-    end
-
-    it "gets correct release group data" do
-      release_group = MusicBrainz::ReleaseGroup.find("6f33e0f0-cde2-38f9-9aee-2c60af8d1a61")
-      expect(release_group.id).to eq "6f33e0f0-cde2-38f9-9aee-2c60af8d1a61"
-      expect(release_group.type).to eq "Album"
-      expect(release_group.title).to eq "Empire"
-      expect(release_group.first_release_date).to eq Date.new(2006, 8, 28)
-      expect(release_group.urls[:wikipedia]).to eq 'http://en.wikipedia.org/wiki/Empire_(Kasabian_album)'
-    end
-  end
-
   describe '.search' do
     context 'without type filter' do
-      it "searches release group by artist name and title" do
-        response = File.open(File.join(File.dirname(__FILE__), "../fixtures/release_group/search.xml")).read
-        allow_any_instance_of(MusicBrainz::Client).to receive(:get_contents)
-          .with('http://musicbrainz.org/ws/2/release-group?query=artist:"Kasabian" AND releasegroup:"Empire"&limit=10')
-          .and_return({ status: 200, body: response})
-
-        matches = MusicBrainz::ReleaseGroup.search('Kasabian', 'Empire')
-        expect(matches.length).to be > 0
-        expect(matches.first[:title]).to eq 'Empire'
-        expect(matches.first[:type]).to eq 'Album'
+      context 'search by artist name and title' do
+        it 'delegates to client properly' do
+          expected = { artist_name: 'Kasabian', title: 'Empire' }
+          
+          expect_any_instance_of(MusicBrainz::Client).to receive(:search).with(
+            described_class.to_s, { query: %Q{artistname:"#{expected[:artist_name]}" AND releasegroup:"#{expected[:title]}" } }, create_models: false
+          )
+          
+          described_class.search(expected[:artist_name], expected[:title])
+        end
+      end
+      
+      context 'search by MusicBrainz ID of artist and title' do
+        it 'delegates to client properly' do
+          expected = { mbid: '69b39eab-6577-46a4-a9f5-817839092033', title: 'Empire' }
+          
+          expect_any_instance_of(MusicBrainz::Client).to receive(:search).with(
+            described_class.to_s, { query: %Q{arid:#{expected[:mbid]} AND releasegroup:"#{expected[:title]}" } }, create_models: false
+          )
+          
+          described_class.search(expected[:mbid], expected[:title])
+        end
       end
     end
-
+    
     context 'with type filter' do
-      it "searches release group by artist name and title" do
-        matches = MusicBrainz::ReleaseGroup.search('Kasabian', 'Empire', 'Album')
-        expect(matches.length).to be > 0
-        expect(matches.first[:title]).to eq 'Empire'
-        expect(matches.first[:type]).to eq 'Album'
+      it "searches album release group by artist name and title" do
+        expected = { artist_name: 'Kasabian', title: 'Empire', type: 'Album' }
+        
+        expect_any_instance_of(MusicBrainz::Client).to receive(:search).with(
+          described_class.to_s, { query: %Q{artistname:"#{expected[:artist_name]}" AND releasegroup:"#{expected[:title]}"  AND type:#{expected[:type]}} }, 
+          create_models: false
+        )
+        
+        described_class.search(expected[:artist_name], expected[:title], type: expected[:type])
       end
     end
   end
-
+  
   describe '.find_by_artist_and_title' do
     it "gets first release group by artist name and title" do
-      response = File.open(File.join(File.dirname(__FILE__), "../fixtures/release_group/search.xml")).read
-      allow_any_instance_of(MusicBrainz::Client).to receive(:get_contents)
-        .with('http://musicbrainz.org/ws/2/release-group?query=artist:"Kasabian" AND releasegroup:"Empire"&limit=10')
-        .and_return({ status: 200, body: response})
-
-      response = File.open(File.join(File.dirname(__FILE__), "../fixtures/release_group/entity.xml")).read
-      allow_any_instance_of(MusicBrainz::Client).to receive(:get_contents)
-        .with('http://musicbrainz.org/ws/2/release-group/6f33e0f0-cde2-38f9-9aee-2c60af8d1a61?inc=url-rels')
-        .and_return({ status: 200, body: response})
-      release_group = MusicBrainz::ReleaseGroup.find_by_artist_and_title('Kasabian', 'Empire')
-      expect(release_group.id).to eq '6f33e0f0-cde2-38f9-9aee-2c60af8d1a61'
+      expected = { artist_name: 'Kasabian', title: 'Empire', id: 'xyz' }
+      
+      allow(MusicBrainz::ReleaseGroup).to receive(:search).with(expected[:artist_name], expected[:title], {}).and_return([{ id: expected[:id] }])
+      expect(MusicBrainz::ReleaseGroup).to receive(:find).with(expected[:id])
+      
+      described_class.find_by_artist_and_title(expected[:artist_name], expected[:title])
     end
   end
-
+  
+  describe '.find_by_artist_id' do
+    it 'gets the release groups for the artist with the given mbid' do
+      expect_any_instance_of(MusicBrainz::Artist).to receive(:release_groups).once
+      described_class.find_by_artist_id('69b39eab-6577-46a4-a9f5-817839092033')
+    end
+  end
+  
   describe '#releases' do
-    it "gets correct release group's releases" do
-      allow_any_instance_of(MusicBrainz::Client).to receive(:get_contents)
-        .with('http://musicbrainz.org/ws/2/release-group/6f33e0f0-cde2-38f9-9aee-2c60af8d1a61?inc=url-rels')
-        .and_return({ status: 200, body: File.open(File.join(File.dirname(__FILE__), "../fixtures/release_group/entity.xml")).read})
-
-      allow_any_instance_of(MusicBrainz::Client).to receive(:get_contents)
-        .with('http://musicbrainz.org/ws/2/release?release-group=6f33e0f0-cde2-38f9-9aee-2c60af8d1a61&inc=media+release-groups&limit=100')
-        .and_return({ status: 200, body: File.open(File.join(File.dirname(__FILE__), "../fixtures/release/list.xml")).read})
-
-      releases = MusicBrainz::ReleaseGroup.find("6f33e0f0-cde2-38f9-9aee-2c60af8d1a61").releases
-      expect(releases.length).to be >= 5
-      expect(releases.first.id).to eq "30d5e730-ce0a-464d-93e1-7d76e4bb3e31"
-      expect(releases.first.status).to eq "Official"
-      expect(releases.first.title).to eq "Empire"
-      expect(releases.first.date).to eq Date.new(2006, 8, 28)
-      expect(releases.first.country).to eq "GB"
-      expect(releases.first.type).to eq "Album"
+    context 'releases already set' do
+      it 'returns the cached releases' do
+        release_group = described_class.new(id: '2225dd4c-ae9a-403b-8ea0-9e05014c778f')
+        release_group.releases = [MusicBrainz::Release.new]
+        
+        expect_any_instance_of(MusicBrainz::Client).not_to receive(:search)
+        
+        release_group.releases
+      end 
+    end
+    
+    context 'releases not set yet' do
+      it 'queries releases' do
+        id = '2225dd4c-ae9a-403b-8ea0-9e05014c778f'
+        
+        expect_any_instance_of(MusicBrainz::Client).to receive(:search).with(
+          'MusicBrainz::Release', { release_group: id, inc: [:media, :release_groups, :recordings], limit: 100 }, sort: :date
+        )
+        
+        described_class.new(id: id).releases
+      end
     end
   end
 end

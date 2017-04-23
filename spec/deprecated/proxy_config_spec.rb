@@ -1,4 +1,4 @@
-# -*- encoding : utf-8 -*-
+# -*- encoding: utf-8 -*-
 
 require "spec_helper"
 
@@ -18,15 +18,15 @@ describe MusicBrainz::Deprecated::ProxyConfig do
   it "allows deprecated use of query_interval" do
     MusicBrainz.config.query_interval = 2
 
-    expect(MusicBrainz::Tools::Proxy.query_interval).to eq 2
-    expect(MusicBrainz.query_interval).to eq 2
+    expect(MusicBrainz::Tools::Proxy.query_interval).to be == 2
+    expect(MusicBrainz.query_interval).to be == 2
   end
 
   it "allows deprecated use of query_interval=" do
     MusicBrainz::Tools::Proxy.query_interval = 3
-    expect(MusicBrainz.config.query_interval).to eq 3
+    expect(MusicBrainz.config.query_interval).to be == 3
 
     MusicBrainz.query_interval = 4
-    expect(MusicBrainz.config.query_interval).to eq 4
+    expect(MusicBrainz.config.query_interval).to be == 4
   end
 end

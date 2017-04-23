@@ -1,32 +1,56 @@
 # -*- encoding: utf-8 -*-
 
-require "spec_helper"
+require 'spec_helper'
 
 describe MusicBrainz::Recording do
-	describe '.find' do
-		it "gets no exception while loading release info" do
-			expect {
-				MusicBrainz::Recording.find("b3015bab-1540-4d4e-9f30-14872a1525f7")
-			}.to_not raise_error(Exception)
-		end
-
-		it "gets correct instance" do
-			track = MusicBrainz::Recording.find("b3015bab-1540-4d4e-9f30-14872a1525f7")
-			expect(track).to be_an_instance_of(MusicBrainz::Recording)
-		end
-
-		it "gets correct track data" do
-			track = MusicBrainz::Recording.find("b3015bab-1540-4d4e-9f30-14872a1525f7")
-			expect(track.title).to eq "Empire"
-		end
-	end
-
   describe '.search' do
-		it "searches tracks (aka recordings) by artist name and title" do
-			matches = MusicBrainz::Recording.search('Bound for the floor', 'Local H')
-			expect(matches.length).to be > 0
-			expect(matches.first[:title]).to eq "Bound for the Floor"
-			expect(matches.first[:artist]).to eq "Local H"
-		end
-	end
+    context 'track released on an any release group type' do
+      context 'search by artist name' do
+        it 'delegates to client properly' do
+          expected = { artist_name: 'Kasabian', title: 'Empire' }
+        
+          expect_any_instance_of(MusicBrainz::Client).to receive(:search).with(
+            described_class.to_s, { query: %Q{artist:"#{expected[:artist_name]}" AND recording:"#{expected[:title]}"}, limit: 100, offset: 100 }, create_models: false
+          )
+          
+          described_class.search(expected[:artist_name], expected[:title], limit: 100, offset: 100)
+        end
+      end
+      
+      context 'search by MusicBrainz ID of artist' do
+        it 'delegates to client properly' do
+          expected = { artist_mbid: '69b39eab-6577-46a4-a9f5-817839092033', title: 'Empire' }
+        
+          expect_any_instance_of(MusicBrainz::Client).to receive(:search).with(
+            described_class.to_s, { query: %Q{arid:"#{expected[:artist_mbid]}" AND recording:"#{expected[:title]}"}, limit: 100, offset: 100 }, create_models: false
+          )
+          
+          described_class.search(expected[:artist_mbid], expected[:title], limit: 100, offset: 100)
+        end
+      end
+    end
+    
+    context 'only track released on an album' do
+      it 'searches track by artist name and title' do
+        expected = { artist_name: 'Kasabian', title: 'Empire', type: 'Album' }
+      
+        expect_any_instance_of(MusicBrainz::Client).to receive(:search).with(
+          described_class.to_s, { query: %Q{artist:"#{expected[:artist_name]}" AND recording:"#{expected[:title]}" AND type: #{expected[:type]}} }, create_models: false
+        )
+        
+        described_class.search(expected[:artist_name], expected[:title], type: expected[:type])
+      end
+    end
+  end
+  
+  describe '.find_by_artist_and_title' do
+    it 'gets first release group by artist name and title' do
+      expected = { artist_name: 'Kasabian', title: 'Empire', id: 'xyz' }
+      
+      allow(MusicBrainz::Recording).to receive(:search).with(expected[:artist_name], expected[:title], {}).and_return([{ id: expected[:id] }])
+      expect(MusicBrainz::Recording).to receive(:find).with(expected[:id])
+      
+      described_class.find_by_artist_and_title(expected[:artist_name], expected[:title])
+    end
+  end
 end
