@@ -1,4 +1,4 @@
-## musicbrainz (unreleased) ##
+# 0.8.0 (April 23, 2017) ##
 
 *   Increases coverage of MusicBrainz API and replaces bindings by Music Brainz XSL schema transformation mapper.
 *   TrackSearch renamed to RecordingSearch.
