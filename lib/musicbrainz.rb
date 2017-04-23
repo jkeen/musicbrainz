@@ -1,100 +1,93 @@
 require 'digest/sha1'
 require 'fileutils'
+
 require 'faraday'
 require 'roxml'
 require File.expand_path('../vendor_extensions/roxml', File.dirname(__FILE__))
 require 'rexml/document'
+
 require 'musicbrainz/version'
+require 'musicbrainz/deprecated'
+require 'musicbrainz/middleware'
+require 'musicbrainz/configuration'
+
+# ClientModules
+require 'musicbrainz/client_modules/transparent_proxy'
+require 'musicbrainz/client_modules/failsafe_proxy'
+require 'musicbrainz/client_modules/caching_proxy'
+require 'musicbrainz/client'
+
+# Mapper
+require 'musicbrainz/mapper/entity'
+require 'musicbrainz/mapper/list'
+require 'musicbrainz/mapper/search_result'
+
+require 'musicbrainz/mapper/generator/base'
+require 'musicbrainz/mapper/generator/model'
+require 'musicbrainz/mapper/generator/resource'
+
+require 'musicbrainz/mapper/resources/artist'
+require 'musicbrainz/mapper/resources/release'
+require 'musicbrainz/mapper/resources/release_group'
+require 'musicbrainz/mapper/resources/recording'
+require 'musicbrainz/mapper/resources/label'
+require 'musicbrainz/mapper/resources/work'
+require 'musicbrainz/mapper/resources/track'
+
+require 'musicbrainz/mapper/resources/url'
+require 'musicbrainz/mapper/resources/disc'
+require 'musicbrainz/mapper/resources/puid'
+require 'musicbrainz/mapper/resources/isrc'
+require 'musicbrainz/mapper/resources/name_credit'
+require 'musicbrainz/mapper/resources/relation'
+require 'musicbrainz/mapper/resources/alias'
+require 'musicbrainz/mapper/resources/tag'
+require 'musicbrainz/mapper/resources/user_tag'
+require 'musicbrainz/mapper/resources/rating'
+require 'musicbrainz/mapper/resources/label_info'
+require 'musicbrainz/mapper/resources/medium'
+require 'musicbrainz/mapper/resources/annotation'
+require 'musicbrainz/mapper/resources/cdstub'
+require 'musicbrainz/mapper/resources/freedb_disc'
+require 'musicbrainz/mapper/resources/nonmb_track'
+require 'musicbrainz/mapper/resources/collection'
+require 'musicbrainz/mapper/resources/cover_art_archive'
+
+# Models
+require 'musicbrainz/models/base_model'
+
+require 'musicbrainz/models/annotation'
+require 'musicbrainz/models/rating'
+require 'musicbrainz/models/cover_art_archive'
+
+require 'musicbrainz/models/artist'
+require 'musicbrainz/models/name_credit'
+require 'musicbrainz/models/concerns/artist_name'
+require 'musicbrainz/models/release_group'
+require 'musicbrainz/models/release'
+require 'musicbrainz/models/recording'
+require 'musicbrainz/models/label'
+require 'musicbrainz/models/work'
+require 'musicbrainz/models/track'
+
+require 'musicbrainz/models/url'
+require 'musicbrainz/models/disc'
+require 'musicbrainz/models/puid'
+require 'musicbrainz/models/isrc'
+require 'musicbrainz/models/relation'
+require 'musicbrainz/models/alias'
+require 'musicbrainz/models/tag'
+require 'musicbrainz/models/user_tag'
+require 'musicbrainz/models/label_info'
+require 'musicbrainz/models/medium'
+require 'musicbrainz/models/cdstub'
+require 'musicbrainz/models/freedb_disc'
+require 'musicbrainz/models/nonmb_track'
+require 'musicbrainz/models/collection'
 
 module MusicBrainz
   GH_PAGE_URL = 'http://git.io/brainz'
 
-  autoload :Deprecated, File.expand_path('musicbrainz/deprecated', File.dirname(__FILE__))
-  autoload :Middleware, File.expand_path('musicbrainz/middleware', File.dirname(__FILE__))
-  autoload :Configuration, File.expand_path('musicbrainz/configuration', File.dirname(__FILE__))
-  autoload :Client, File.expand_path('musicbrainz/client', File.dirname(__FILE__))
-  
-  autoload :BaseModel, File.expand_path('musicbrainz/models/base_model', File.dirname(__FILE__))
-  
-  # models
-  autoload :Artist, File.expand_path('musicbrainz/models/artist', File.dirname(__FILE__))
-  autoload :Release, File.expand_path('musicbrainz/models/release', File.dirname(__FILE__))
-  autoload :ReleaseGroup, File.expand_path('musicbrainz/models/release_group', File.dirname(__FILE__))
-  autoload :Recording, File.expand_path('musicbrainz/models/recording', File.dirname(__FILE__))
-  autoload :Label, File.expand_path('musicbrainz/models/label', File.dirname(__FILE__))
-  autoload :Work, File.expand_path('musicbrainz/models/work', File.dirname(__FILE__))
-  autoload :Track, File.expand_path('musicbrainz/models/track', File.dirname(__FILE__))
-  
-  autoload :Url, File.expand_path('musicbrainz/models/url', File.dirname(__FILE__))
-  autoload :Disc, File.expand_path('musicbrainz/models/disc', File.dirname(__FILE__))
-  autoload :Puid, File.expand_path('musicbrainz/models/puid', File.dirname(__FILE__))
-  autoload :Isrc, File.expand_path('musicbrainz/models/isrc', File.dirname(__FILE__))
-  autoload :NameCredit, File.expand_path('musicbrainz/models/name_credit', File.dirname(__FILE__))
-  autoload :Relation, File.expand_path('musicbrainz/models/relation', File.dirname(__FILE__))
-  autoload :Alias, File.expand_path('musicbrainz/models/alias', File.dirname(__FILE__))
-  autoload :Tag, File.expand_path('musicbrainz/models/tag', File.dirname(__FILE__))
-  autoload :UserTag, File.expand_path('musicbrainz/models/user_tag', File.dirname(__FILE__))
-  autoload :Rating, File.expand_path('musicbrainz/models/rating', File.dirname(__FILE__))
-  autoload :LabelInfo, File.expand_path('musicbrainz/models/label_info', File.dirname(__FILE__))
-  autoload :Medium, File.expand_path('musicbrainz/models/medium', File.dirname(__FILE__))
-  autoload :Annotation, File.expand_path('musicbrainz/models/annotation', File.dirname(__FILE__))
-  autoload :Cdstub, File.expand_path('musicbrainz/models/cdstub', File.dirname(__FILE__))
-  autoload :FreedbDisc, File.expand_path('musicbrainz/models/freedb_disc', File.dirname(__FILE__))
-  autoload :NonmbTrack, File.expand_path('musicbrainz/models/nonmb_track', File.dirname(__FILE__))
-  autoload :Collection, File.expand_path('musicbrainz/models/collection', File.dirname(__FILE__))
-  autoload :CoverArtArchive, File.expand_path('musicbrainz/models/cover_art_archive', File.dirname(__FILE__))
-  
-  module ClientModules
-    autoload :TransparentProxy, File.expand_path('musicbrainz/client_modules/transparent_proxy', File.dirname(__FILE__))
-    autoload :FailsafeProxy, File.expand_path('musicbrainz/client_modules/failsafe_proxy', File.dirname(__FILE__))
-    autoload :CachingProxy, File.expand_path('musicbrainz/client_modules/caching_proxy', File.dirname(__FILE__))
-  end
-
-  module Mapper
-    autoload :Entity, File.expand_path('musicbrainz/mapper/entity', File.dirname(__FILE__))
-    autoload :List, File.expand_path('musicbrainz/mapper/list', File.dirname(__FILE__))
-    autoload :SearchResult, File.expand_path('musicbrainz/mapper/search_result', File.dirname(__FILE__))
-    
-    module Generator
-      autoload :Base, File.expand_path('musicbrainz/mapper/generator/base', File.dirname(__FILE__))
-      autoload :Model, File.expand_path('musicbrainz/mapper/generator/model', File.dirname(__FILE__))
-      autoload :Resource, File.expand_path('musicbrainz/mapper/generator/resource', File.dirname(__FILE__))
-    end
-    
-    module Resources
-      autoload :Artist, File.expand_path('musicbrainz/mapper/resources/artist', File.dirname(__FILE__))
-      autoload :Release, File.expand_path('musicbrainz/mapper/resources/release', File.dirname(__FILE__))
-      autoload :ReleaseGroup, File.expand_path('musicbrainz/mapper/resources/release_group', File.dirname(__FILE__))
-      autoload :Recording, File.expand_path('musicbrainz/mapper/resources/recording', File.dirname(__FILE__))
-      autoload :Label, File.expand_path('musicbrainz/mapper/resources/label', File.dirname(__FILE__))
-      autoload :Work, File.expand_path('musicbrainz/mapper/resources/work', File.dirname(__FILE__))
-      autoload :Track, File.expand_path('musicbrainz/mapper/resources/track', File.dirname(__FILE__))
-      
-      autoload :Url, File.expand_path('musicbrainz/mapper/resources/url', File.dirname(__FILE__))
-      autoload :Disc, File.expand_path('musicbrainz/mapper/resources/disc', File.dirname(__FILE__))
-      autoload :Puid, File.expand_path('musicbrainz/mapper/resources/puid', File.dirname(__FILE__))
-      autoload :Isrc, File.expand_path('musicbrainz/mapper/resources/isrc', File.dirname(__FILE__))
-      autoload :NameCredit, File.expand_path('musicbrainz/mapper/resources/name_credit', File.dirname(__FILE__))
-      autoload :Relation, File.expand_path('musicbrainz/mapper/resources/relation', File.dirname(__FILE__))
-      autoload :Alias, File.expand_path('musicbrainz/mapper/resources/alias', File.dirname(__FILE__))
-      autoload :Tag, File.expand_path('musicbrainz/mapper/resources/tag', File.dirname(__FILE__))
-      autoload :UserTag, File.expand_path('musicbrainz/mapper/resources/user_tag', File.dirname(__FILE__))
-      autoload :Rating, File.expand_path('musicbrainz/mapper/resources/rating', File.dirname(__FILE__))
-      autoload :LabelInfo, File.expand_path('musicbrainz/mapper/resources/label_info', File.dirname(__FILE__))
-      autoload :Medium, File.expand_path('musicbrainz/mapper/resources/medium', File.dirname(__FILE__))
-      autoload :Annotation, File.expand_path('musicbrainz/mapper/resources/annotation', File.dirname(__FILE__))
-      autoload :Cdstub, File.expand_path('musicbrainz/mapper/resources/cdstub', File.dirname(__FILE__))
-      autoload :FreedbDisc, File.expand_path('musicbrainz/mapper/resources/freedb_disc', File.dirname(__FILE__))
-      autoload :NonmbTrack, File.expand_path('musicbrainz/mapper/resources/nonmb_track', File.dirname(__FILE__))
-      autoload :Collection, File.expand_path('musicbrainz/mapper/resources/collection', File.dirname(__FILE__))
-      autoload :CoverArtArchive, File.expand_path('musicbrainz/mapper/resources/cover_art_archive', File.dirname(__FILE__))  
-    end
-  end
-
-  module Concerns
-    autoload :ArtistName, File.expand_path('musicbrainz/models/concerns/artist_name', File.dirname(__FILE__))
-  end
-  
   module Configurable
     def configure
       raise Exception.new("Configuration block missing") unless block_given?
@@ -115,14 +108,14 @@ module MusicBrainz
       end
     end
   end
-  
+
   extend Configurable
-  
+
   module ClientHelper
     def client
       @client ||= Client.new
     end
   end
-  
+
   extend ClientHelper
 end
